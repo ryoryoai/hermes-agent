@@ -70,6 +70,21 @@ _TOOL_CALL_LEAK_PATTERN = re.compile(
     r"(?:^|[\s>|])to=functions\.[A-Za-z_][\w.]*",
     re.IGNORECASE,
 )
+_TOOL_CALL_LEAK_SCAN_LIMIT = 8192
+
+
+def _scan_for_leaked_tool_call(text: str) -> bool:
+    """Return True if Codex leaked a Harmony tool-call marker near the start.
+
+    Real leaked tool-call serializations begin with the Harmony marker.  Bound
+    the regex to a prefix window so multi-megabyte successful assistant output
+    never spends unbounded GIL time proving it does not contain a leak.
+    """
+    return bool(
+        _TOOL_CALL_LEAK_PATTERN.search(
+            text[:_TOOL_CALL_LEAK_SCAN_LIMIT + 64]
+        )
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1227,7 +1242,7 @@ def _normalize_codex_response(
     # ``function_call`` item. The existing loop already handles message
     # append, dedup, and retry budget.
     leaked_tool_call_text = False
-    if final_text and not tool_calls and _TOOL_CALL_LEAK_PATTERN.search(final_text):
+    if final_text and not tool_calls and _scan_for_leaked_tool_call(final_text):
         leaked_tool_call_text = True
         logger.warning(
             "Codex response contains leaked tool-call text in assistant content "

@@ -1520,6 +1520,42 @@ def test_normalize_codex_response_detects_leaked_tool_call_text(monkeypatch):
     assert assistant_message.tool_calls == []
 
 
+def test_scan_for_leaked_tool_call_checks_prefix_window_only(monkeypatch):
+    from agent.codex_responses_adapter import (
+        _TOOL_CALL_LEAK_SCAN_LIMIT,
+        _scan_for_leaked_tool_call,
+    )
+
+    marker = "to=functions.terminal {\"command\": \"pwd\"}"
+
+    assert _scan_for_leaked_tool_call(marker) is True
+    assert _scan_for_leaked_tool_call("x" * (_TOOL_CALL_LEAK_SCAN_LIMIT - 10) + " " + marker) is True
+    assert _scan_for_leaked_tool_call("x" * (_TOOL_CALL_LEAK_SCAN_LIMIT + 10) + marker) is False
+
+
+def test_normalize_codex_response_ignores_late_tool_call_marker_past_scan_window(monkeypatch):
+    from agent.codex_responses_adapter import _TOOL_CALL_LEAK_SCAN_LIMIT, _normalize_codex_response
+
+    late_marker = "x" * (_TOOL_CALL_LEAK_SCAN_LIMIT + 100) + " to=functions.terminal {\"command\": \"pwd\"}"
+    response = SimpleNamespace(
+        output=[
+            SimpleNamespace(
+                type="message",
+                status="completed",
+                content=[SimpleNamespace(type="output_text", text=late_marker)],
+            )
+        ],
+        usage=SimpleNamespace(input_tokens=4, output_tokens=2, total_tokens=6),
+        status="completed",
+        model="gpt-5.4",
+    )
+
+    assistant_message, finish_reason = _normalize_codex_response(response)
+
+    assert finish_reason == "stop"
+    assert assistant_message.content == late_marker
+
+
 def test_normalize_codex_response_ignores_tool_call_text_when_real_tool_call_present(monkeypatch):
     """If the model emitted BOTH a structured function_call AND some text that
     happens to contain `to=functions.*` (unlikely but possible), trust the
