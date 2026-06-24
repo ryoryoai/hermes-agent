@@ -76,6 +76,7 @@ const state = (overrides: Partial<SubscriptionStateResponse> = {}): Subscription
   is_admin: true,
   can_change_plan: true,
   org_name: 'Acme',
+  org_id: 'org_acme',
   role: 'OWNER',
   current: null,
   tiers: [],
@@ -252,8 +253,8 @@ describe('SubscriptionOverlay — confirm screen', () => {
     expect(out).toContain('Confirm subscription')
     expect(out).toContain('Pro')
     expect(out).toContain('$20')
-    expect(out).toContain('securely on Stripe')
-    expect(out).toContain('Continue to Stripe')
+    expect(out).toContain('securely on your subscription page')
+    expect(out).toContain('Continue to your subscription page')
   })
 })
 

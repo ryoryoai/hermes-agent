@@ -158,6 +158,7 @@ export interface SubscriptionStateResponse {
   is_admin: boolean
   can_change_plan: boolean        // role gate (ADMIN/OWNER), from NAS
   org_name: string | null
+  org_id: string | null           // org.id from the NAS response
   role: string | null
   context: 'personal' | 'team'   // personal account vs team/org terminal
   current: {
@@ -175,17 +176,6 @@ export interface SubscriptionStateResponse {
   tiers: SubscriptionTierOption[]
   portal_url: string | null
   error?: string | null
-}
-
-export interface SubscriptionManageLinkResponse {
-  ok: boolean
-  kind?: 'checkout' | 'manage' | 'portal'
-  url?: string
-  error?: string
-  message?: string
-  portal_url?: string | null
-  retry_after?: number | null
-  payload?: BillingErrorPayload
 }
 
 export type CommandDispatchResponse =

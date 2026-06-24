@@ -1,6 +1,5 @@
 import type {
   BillingMutationResponse,
-  SubscriptionManageLinkResponse,
   SubscriptionStateResponse
 } from '../../../gatewayTypes.js'
 import { openExternalUrl } from '../../../lib/openExternalUrl.js'
@@ -11,37 +10,63 @@ import type { SlashCommand, SlashRunCtx } from '../types.js'
 type Sys = (text: string) => void
 
 /**
+ * Build the manage-subscription URL locally from the loaded subscription state.
+ *
+ * Uses `portal_url` (the resolved portal base URL carried in the state) and
+ * `org_id` to construct `{portal_base}/manage-subscription?org_id=<id>`.
+ * `org_id` pins the page to the correct account in multi-org situations.
+ * Falls back to bare `/manage-subscription` if org_id is absent.
+ */
+function buildManageUrl(s: SubscriptionStateResponse): string | null {
+  // portal_url is already an absolute URL resolved by resolve_portal_base_url()
+  // on the Python side (e.g. https://portal.nousresearch.com/billing). Strip any
+  // path so we can attach /manage-subscription cleanly.
+  const base = s.portal_url
+    ? new URL(s.portal_url).origin
+    : null
+
+  if (!base) {
+    return null
+  }
+
+  const url = new URL('/manage-subscription', base)
+
+  if (s.org_id) {
+    url.searchParams.set('org_id', s.org_id)
+  }
+
+  return url.toString()
+}
+
+/**
  * Build the ctx the overlay uses to talk to the gateway + emit transcript
  * lines.  Mirrors topup.ts's buildOverlayCtx — all RPC + error-mapping logic
  * lives here (single source of truth); the overlay only renders + routes keys.
  */
-const buildSubscriptionCtx = (ctx: SlashRunCtx, sys: Sys): SubscriptionOverlayCtx => ({
-  openManageLink: (targetTierId?: string) =>
-    ctx.gateway
-      .rpc<SubscriptionManageLinkResponse>('subscription.manage_link', {
-        ...(targetTierId ? { target_tier_id: targetTierId } : {})
-      })
-      .then(r => {
-        if (r && r.ok && r.url) {
-          openExternalUrl(r.url)
-          sys('Opening your subscription page in the browser — finish the change there; re-run /subscription to confirm.')
+const buildSubscriptionCtx = (
+  ctx: SlashRunCtx,
+  sys: Sys,
+  initialState: SubscriptionStateResponse
+): SubscriptionOverlayCtx => ({
+  openManageLink: () => {
+    const url = buildManageUrl(initialState)
 
-          return true
-        }
+    if (!url) {
+      sys('Could not build manage URL — is your portal configured?')
 
-        // insufficient_scope → Phase 4 step-up (handled by the overlay).
-        // For now, other errors just log + resolve false.
-        if (r && r.error) {
-          sys(r.message ?? r.error)
-        }
+      return Promise.resolve(false)
+    }
 
-        return false
-      })
-      .catch(e => {
-        ctx.guardedErr(e)
+    const opened = openExternalUrl(url)
 
-        return false
-      }),
+    if (opened) {
+      sys('Opening your subscription page in the browser — finish the change there; re-run /subscription to confirm.')
+    } else {
+      sys('Could not open browser — visit your subscription page manually at ' + url)
+    }
+
+    return Promise.resolve(opened)
+  },
   refreshState: () =>
     ctx.gateway
       .rpc<SubscriptionStateResponse>('subscription.state', {})
@@ -77,7 +102,7 @@ export const subscriptionCommands: SlashCommand[] = [
 
             patchOverlayState({
               subscription: {
-                ctx: buildSubscriptionCtx(ctx, sys),
+                ctx: buildSubscriptionCtx(ctx, sys, s),
                 pendingTargetTierId: null,
                 resumeScreen: null,
                 screen: 'overview',

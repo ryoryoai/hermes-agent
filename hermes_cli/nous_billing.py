@@ -416,20 +416,3 @@ def get_subscription_state(*, timeout: float = DEFAULT_TIMEOUT) -> dict[str, Any
     return _request("GET", "/api/billing/subscription", timeout=timeout)
 
 
-def post_subscription_manage_link(
-    *,
-    target_tier_id: Optional[str] = None,
-    timeout: float = DEFAULT_TIMEOUT,
-) -> dict[str, Any]:
-    """``POST /api/billing/subscription/manage-link`` → ``{kind, url}`` (scope required).
-
-    Returns a Stripe-hosted URL the TUI opens via ``openExternalUrl``.
-    ``kind`` is ``"checkout"`` (free → first subscribe) or ``"portal"``
-    (existing sub → NAS manage page). ``target_tier_id`` is needed only
-    for the free→paid checkout branch. Raises :class:`BillingScopeRequired`
-    when the Remote-Spending grant is missing (Phase 4 step-up trigger).
-    """
-    body: dict[str, Any] = {}
-    if target_tier_id:
-        body["targetTierId"] = target_tier_id
-    return _request("POST", "/api/billing/subscription/manage-link", body=body, timeout=timeout)

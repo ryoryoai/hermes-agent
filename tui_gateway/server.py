@@ -5619,6 +5619,7 @@ def _serialize_subscription_state(state) -> dict:
         "is_admin": state.is_admin,
         "can_change_plan": state.can_change_plan,
         "org_name": state.org_name,
+        "org_id": state.org_id,
         "role": state.role,
         "context": state.context,
         "current": current,
@@ -5643,29 +5644,6 @@ def _(rid, params: dict) -> dict:
     except Exception:
         return _ok(rid, {"ok": True, "logged_in": False, "error": "could not load subscription state"})
 
-
-@method("subscription.manage_link")
-def _(rid, params: dict) -> dict:
-    """POST /api/billing/subscription/manage-link → {ok, kind, url} or typed error.
-
-    kind: 'checkout' (free → first subscribe) | 'portal' (existing sub →
-    NAS manage page). The deep-link target is NAS's own /manage-subscription
-    page, NOT the Stripe hosted Billing Portal. The TUI just opens the URL.
-    Raises insufficient_scope when Remote-Spending is required (Phase 4).
-    """
-    from hermes_cli.nous_billing import BillingError
-
-    try:
-        from agent.subscription_view import get_subscription_manage_link
-
-        result = get_subscription_manage_link(
-            target_tier_id=params.get("target_tier_id") or None
-        )
-        return _ok(rid, {"ok": True, "kind": result.get("kind"), "url": result.get("url")})
-    except BillingError as exc:
-        return _ok(rid, _serialize_billing_error(exc))
-    except Exception as exc:
-        return _ok(rid, {"ok": False, "error": "error", "message": str(exc)})
 
 
 @method("billing.charge")

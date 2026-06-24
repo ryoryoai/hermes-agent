@@ -304,7 +304,7 @@ function ConfirmScreen({ ctx, onBack, onClose, onPatch, overlay, s, t }: Confirm
     setTransitioned(true)
     onPatch({ screen: 'handoff' })
 
-    void ctx.openManageLink(targetTierId).then(ok => {
+    void ctx.openManageLink().then(ok => {
       if (!ok) {
         // If openManageLink surfaces insufficient_scope, the ctx closure in
         // subscription.ts handles the stepup transition (Phase 4 wiring).

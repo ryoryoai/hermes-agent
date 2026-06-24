@@ -6,14 +6,12 @@ and let the surface degrade gracefully (never crash). Money is decimal end-to-en
 (server emits decimal strings); we only format for display.
 
 The TUI ``SubscriptionOverlay`` is **deep-link only** — it never charges
-in-terminal. :func:`get_subscription_manage_link` returns a Stripe-hosted URL
-the TUI opens in the browser.
+in-terminal. The manage URL is built locally on the TUI side from the
+``portal_url`` and ``org_id`` fields in the subscription state.
 
-WS1 dependency: ``GET /api/billing/subscription`` and
-``POST /api/billing/subscription/manage-link`` are NAS endpoints (WS1 Phase A/C).
-Until they ship, the fail-open contract handles 404s — the builder returns
-``logged_in=False`` and the manage-link raises a :class:`BillingError` the
-gateway serializes into a typed error envelope.
+WS1 dependency: ``GET /api/billing/subscription`` is a NAS endpoint (WS1 Phase A).
+Until it ships, the fail-open contract handles 404s — the builder returns
+``logged_in=False`` and the surface degrades gracefully.
 """
 
 from __future__ import annotations
@@ -72,6 +70,7 @@ class SubscriptionState:
 
     logged_in: bool
     org_name: Optional[str] = None
+    org_id: Optional[str] = None  # org.id from the NAS response
     role: Optional[str] = None  # "OWNER" | "ADMIN" | "MEMBER"
     context: str = "personal"  # "personal" | "team"
     current: Optional[CurrentSubscription] = None
@@ -150,6 +149,7 @@ def subscription_state_from_payload(
     return SubscriptionState(
         logged_in=True,
         org_name=org.get("name"),
+        org_id=org.get("id") or None,
         role=org.get("role"),
         context=context,
         current=_parse_current(payload.get("current")),
@@ -203,16 +203,3 @@ def build_subscription_state(*, timeout: float = 15.0) -> SubscriptionState:
     return subscription_state_from_payload(payload, portal_url=portal_url)
 
 
-def get_subscription_manage_link(
-    *, target_tier_id: Optional[str] = None, timeout: float = 15.0
-) -> dict[str, Any]:
-    """Fetch the Stripe-hosted manage-link URL from NAS.
-
-    Returns ``{"kind": "checkout"|"portal", "url": "https://..."}``. Raises
-    :class:`BillingScopeRequired` when the Remote-Spending grant is missing
-    (Phase 4 step-up trigger) — the caller (gateway RPC) serializes that into
-    ``error:"insufficient_scope"``.
-    """
-    from hermes_cli.nous_billing import post_subscription_manage_link
-
-    return post_subscription_manage_link(target_tier_id=target_tier_id, timeout=timeout)

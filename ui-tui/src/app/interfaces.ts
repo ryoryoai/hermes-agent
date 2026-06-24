@@ -136,8 +136,8 @@ export type SubscriptionScreen =
   | 'handoff'       // transient: "Opening Stripe in your browser…"
 
 export interface SubscriptionOverlayCtx {
-  /** Fetch the manage-link URL and open it (deep-link). Resolves ok/false. */
-  openManageLink: (targetTierId?: string) => Promise<boolean>
+  /** Build {portal}/manage-subscription?org_id=… locally and open it. Resolves ok/false. */
+  openManageLink: () => Promise<boolean>
   /** Re-fetch subscription.state (used by Phase-4 resume). */
   refreshState: () => Promise<SubscriptionStateResponse | null>
   /** Run billing.step_up (Remote Spending). Resolves granted. */
