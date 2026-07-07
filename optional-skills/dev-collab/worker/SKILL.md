@@ -44,6 +44,14 @@ git -C /Users/ryohei/projects/hermes-agent fetch origin
 git -C /Users/ryohei/projects/hermes-agent worktree add ~/agent-workspace/issue-<N> "$BRANCH"
 ```
 
+差し戻し作業の最初に、ブランチを最新mainに追随させる（mainが先に進んでいてコンフリクトする場合は解消してから修正に入る）:
+
+```bash
+cd ~/agent-workspace/issue-<N>
+git fetch origin && git merge origin/main --no-edit
+# コンフリクトが出たら: 双方の意図を読んで解消し、git add -A && git commit --no-edit
+```
+
 ### 3. 実装
 
 - 変更は最小限に。Issueに書かれたことだけをやる（無関係なリファクタ禁止）
