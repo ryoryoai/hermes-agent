@@ -72,6 +72,8 @@ git fetch origin && git merge origin/main --no-edit
 
 ### 4. ローカルテスト（CI と同条件）
 
+**CONTRIBUTINGのセットアップ手順のうち、実行してよいのはvenv作成・依存インストール・pytestのみ。** symlink作成（`ln -sf ... ~/.local/bin/hermes`）、`~/.hermes` の初期化、`hermes` CLIの実行はしてはならない（グローバル環境変更の禁止事項に該当。実際にsymlink張り替えでCLIが2度壊れた）。
+
 ```bash
 cd ~/agent-workspace/issue-<N>
 uv venv .venv --python 3.11

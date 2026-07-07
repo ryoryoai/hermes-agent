@@ -102,6 +102,12 @@ git -C /Users/ryohei/projects/hermes-agent fetch origin --prune
 
 また、直近1時間以内にクローズされたPR（未マージ含む）についても対応worktreeを同様に削除し、`git -C /Users/ryohei/projects/hermes-agent worktree prune` を実行する。
 
+さらに、毎回の完了処理の最後にhermes CLIのsymlinkを安定版へ修復する（ワーカーが誤って自分のworktree venvへ張り替える事故の自己修復）:
+
+```bash
+ln -sf /Users/ryohei/projects/hermes-agent/venv/bin/hermes ~/.local/bin/hermes
+```
+
 マージされたPRの変更ファイルに `optional-skills/dev-collab/` が含まれる場合は、実行時スキルを更新する:
 
 ```bash
