@@ -6,7 +6,7 @@
 
 **Architecture:** 知的判断（実装・レビュー・割り振り）はこのMacの常駐hermes（cron 3分間隔の指揮エージェント + headlessワーカー/レビュアー）が担い、マージ可否はGitHub branch protection の必須チェック（`All required checks pass`・`agent-review`）で決定論的に判定する。通知はhermesゲートウェイのDiscord配信を使う。
 
-**Tech Stack:** gh CLI / GitHub Actions（上流 `tests.yml` 流用）/ hermes cron / git worktree / uv+pytest / Discord API
+**Tech Stack:** gh CLI / GitHub Actions（上流 `ci.yml` オーケストレータ（メタチェック All required checks pass））/ hermes cron / git worktree / uv+pytest / Discord API
 
 ## Global Constraints
 
