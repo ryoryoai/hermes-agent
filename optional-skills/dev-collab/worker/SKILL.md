@@ -37,10 +37,12 @@ cd ~/agent-workspace/issue-<N>
 
 差し戻しの場合は既存の `~/agent-workspace/issue-<N>` でそのまま作業する。
 既存worktreeが消えている場合は、PRのheadブランチから復元してから作業する:
+Gitに消えたworktreeの登録だけが残っていると `worktree add` が失敗するため、復元前にstale登録をpruneする。
 
 ```bash
 BRANCH=$(gh pr view <PR番号> -R ryoryoai/hermes-agent --json headRefName -q .headRefName)
 git -C /Users/ryohei/projects/hermes-agent fetch origin
+git -C /Users/ryohei/projects/hermes-agent worktree prune
 git -C /Users/ryohei/projects/hermes-agent worktree add ~/agent-workspace/issue-<N> "$BRANCH"
 ```
 
