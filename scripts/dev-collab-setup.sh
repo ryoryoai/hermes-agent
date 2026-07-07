@@ -14,14 +14,19 @@ echo "==> 2/5 リポジトリ設定 (auto-merge, ブランチ自動削除)"
 gh api -X PATCH "repos/$REPO" -F allow_auto_merge=true -F delete_branch_on_merge=true >/dev/null
 
 echo "==> 3/5 不要ワークフロー無効化 (Tests以外)"
-for wf in deploy-site.yml docker-publish.yml nix.yml skills-index.yml supply-chain-audit.yml contributor-check.yml docs-site-checks.yml; do
+for wf in deploy-site.yml upload_to_pypi.yml skills-index.yml skills-index-freshness.yml; do
   gh workflow disable "$wf" -R "$REPO" 2>/dev/null && echo "    disabled: $wf" || echo "    skip: $wf"
+done
+
+echo "==> 3.5/5 calleeワークフロー再有効化"
+for wf in ci.yml contributor-check.yml docs-site-checks.yml supply-chain-audit.yml; do
+  gh workflow enable "$wf" -R "$REPO" 2>/dev/null && echo "    enabled: $wf" || echo "    skip: $wf"
 done
 
 echo "==> 4/5 branch protection (main)"
 gh api -X PUT "repos/$REPO/branches/main/protection" --input - <<'JSON' >/dev/null
 {
-  "required_status_checks": {"strict": false, "contexts": ["test", "e2e", "agent-review"]},
+  "required_status_checks": {"strict": false, "contexts": ["All required checks pass", "agent-review"]},
   "enforce_admins": true,
   "required_pull_request_reviews": null,
   "restrictions": null,

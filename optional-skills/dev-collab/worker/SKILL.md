@@ -76,5 +76,5 @@ gh issue comment <N> -R ryoryoai/hermes-agent --body "worker: PR #<PR番号> を
 
 ## Verification
 
-- `gh pr checks <PR番号> -R ryoryoai/hermes-agent` で test / e2e が実行中または成功していること
+- `gh pr checks <PR番号> -R ryoryoai/hermes-agent` で必須チェック（All required checks pass / agent-review）が実行中または成功していること
 - PR本文に `Closes #<N>` が含まれていること（dispatcherの追跡とIssue自動クローズに必須）
