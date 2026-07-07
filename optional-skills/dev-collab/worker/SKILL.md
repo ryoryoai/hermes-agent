@@ -52,8 +52,11 @@ cd ~/agent-workspace/issue-<N>
 cd ~/agent-workspace/issue-<N>
 uv venv .venv --python 3.11
 VIRTUAL_ENV="$PWD/.venv" uv pip install -e ".[all,dev]"
-OPENROUTER_API_KEY="" OPENAI_API_KEY="" NOUS_API_KEY="" .venv/bin/python -m pytest tests/ -q --ignore=tests/integration --ignore=tests/e2e --tb=short -n auto
+mkdir -p .hermes-test
+HERMES_HOME="$PWD/.hermes-test" OPENROUTER_API_KEY="" OPENAI_API_KEY="" NOUS_API_KEY="" .venv/bin/python -m pytest tests/ -q --ignore=tests/integration --ignore=tests/e2e --tb=short -n auto
 ```
+
+**`HERMES_HOME` のサンドボックス指定は必須。** これがないとテストが実ユーザーの `~/.hermes/`（auth.json等）を書き換え、稼働中の全エージェントの認証を破壊する（Issue #5のワーカー実行で実際に発生した事故）。
 
 失敗したら修正して再実行。greenになるまでpushしない。自力で解決できない場合はPRを出さず、Issueに『worker: 断念 — <理由>』の形式でコメントして終了する。
 
