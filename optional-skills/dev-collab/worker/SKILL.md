@@ -36,6 +36,13 @@ cd ~/agent-workspace/issue-<N>
 ```
 
 差し戻しの場合は既存の `~/agent-workspace/issue-<N>` でそのまま作業する。
+既存worktreeが消えている場合は、PRのheadブランチから復元してから作業する:
+
+```bash
+BRANCH=$(gh pr view <PR番号> -R ryoryoai/hermes-agent --json headRefName -q .headRefName)
+git -C /Users/ryohei/projects/hermes-agent fetch origin
+git -C /Users/ryohei/projects/hermes-agent worktree add ~/agent-workspace/issue-<N> "$BRANCH"
+```
 
 ### 3. 実装
 
@@ -59,6 +66,7 @@ HERMES_HOME="$PWD/.hermes-test" OPENROUTER_API_KEY="" OPENAI_API_KEY="" NOUS_API
 **`HERMES_HOME` のサンドボックス指定は必須。** これがないとテストが実ユーザーの `~/.hermes/`（auth.json等）を書き換え、稼働中の全エージェントの認証を破壊する（Issue #5のワーカー実行で実際に発生した事故）。
 
 失敗したら修正して再実行。greenになるまでpushしない。自力で解決できない場合はPRを出さず、Issueに『worker: 断念 — <理由>』の形式でコメントして終了する。
+**無言終了の禁止**: どんな理由で終了する場合も（環境不備・worktree消失・判断不能を含む）、必ずIssueに `worker:` で始まる状況コメントを残すこと。コメントなしの終了はdispatcherの停滞検知を遅らせる。
 
 ### 5. push と PR作成
 
